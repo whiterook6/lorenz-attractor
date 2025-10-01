@@ -8,7 +8,7 @@ export class LorenzAttractor {
   public derivative = (x: number, y: number, z: number): Point3 => [
     this.sigma * (y - x),
     x * (this.rho - z) - y,
-    x * y - this.beta * z
+    x * y - this.beta * z,
   ];
 
   public step = ([x, y, z]: Point3, dt: number): Point3 => {
@@ -40,5 +40,5 @@ export class LorenzAttractor {
     const [dx, dy, dz] = this.derivative(x, y, z);
     const magnitude = Math.sqrt(dx * dx + dy * dy + dz * dz);
     return stepSize / magnitude;
-  }
-};
+  };
+}

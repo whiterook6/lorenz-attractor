@@ -12,10 +12,96 @@
       canvas {
         display: block; /* Removes extra spacing below the canvas */
       }
+
+
+
+      /* Sidebar Styles */
+      .sidebar {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 60px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .sidebar-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 8px;
+        gap: 12px;
+      }
+
+      .icon-button {
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #333;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .icon-button:hover {
+        background: rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .icon-button:active {
+        transform: translateY(0);
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .icon-button svg {
+        transition: transform 0.2s ease;
+      }
+
+      .icon-button:hover svg {
+        transform: scale(1.1);
+      }
     </style>
   </head>
   <body>
     <canvas id="myCanvas"></canvas>
+    <!-- Floating Sidebar -->
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-content">
+        <button class="icon-button" title="Play/Pause" id="playPauseButton">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+        <button class="icon-button" title="Step Forward" id="stepForwardButton">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+            <path d="M8 5v14l11-7z" transform="translate(12, 0)" />
+          </svg>
+        </button>
+        <button class="icon-button" title="Step Back" id="stepBackButton">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 5v14l-11-7z" />
+            <path d="M16 5v14l-11-7z" transform="translate(-12, 0)" />
+          </svg>
+        </button>
+        <button class="icon-button" title="Reset" id="resetButton">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
     <script src="output/index.js"></script>
   </body>
 </html>

@@ -24,7 +24,7 @@ export class Camera {
     this.isDragging = true;
     this.lastX = event.clientX;
     this.lastY = event.clientY;
-  }
+  };
 
   public mouseMove = (event: MouseEvent) => {
     if (this.isDragging) {
@@ -35,11 +35,11 @@ export class Camera {
       this.lastX = event.clientX;
       this.lastY = event.clientY;
     }
-  }
+  };
 
   public mouseUp = (_event: MouseEvent) => {
     this.isDragging = false;
-  }
+  };
 
   public wheel = (event: WheelEvent) => {
     event.preventDefault();
@@ -54,12 +54,12 @@ export class Camera {
     this.offsetY = mouseY - factor * (mouseY - this.offsetY);
 
     this.scale *= factor;
-  }
+  };
 
   public transform = (point: Point3): [number, number] => {
     const [x, y] = point;
     const xScreen = x * this.scale + this.offsetX;
     const yScreen = y * this.scale + this.offsetY;
     return [xScreen, yScreen];
-  }
+  };
 }

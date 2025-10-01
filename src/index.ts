@@ -1,18 +1,17 @@
-import { time } from "console";
 import { LorenzAttractor } from "./attractor";
+import { Buffer } from "./buffer";
 import { Camera } from "./camera";
 import { getCanvas, getCanvasContext } from "./canvasContext";
 import { Point3 } from "./types";
 
 // generate points from the attractor
-let currentPoint: Point3 = [0.1, 0, 0];
-const points: Point3[] = [];
+const pointBuffer = new Buffer<Point3>(1000);
+pointBuffer.add([
+  Math.random() * 20 - 10,
+  Math.random() * 20 - 10,
+  Math.random() * 20 - 10,
+]); // initial condition
 const attractor = new LorenzAttractor();
-for (let i = 0; i < 10000; i++) {
-  const stepSize = Math.max(attractor.getTimestep(currentPoint, 0.5), 0.001);
-  currentPoint = attractor.step([...currentPoint], stepSize);
-  points.push(currentPoint);
-}
 
 // get the rendering context
 const canvas = getCanvas("myCanvas");
@@ -32,51 +31,56 @@ window.addEventListener("resize", resizeCanvas);
 const camera = new Camera();
 
 // nice starting values for this scene.
-camera.offsetX = 667.8353340026421;
-camera.offsetY = 323.6764229710278;
-camera.scale = 15.863092971714982;
+camera.offsetX = window.innerWidth / 2;
+camera.offsetY = window.innerHeight / 2;
+camera.scale = 16;
 
-
-const trailLength = 1000;
-let maxFrame = points.length - 1000;
-let frame = Math.floor(Math.random() * maxFrame) + 1;
 const step = () => {
-  frame = (frame % maxFrame) + 1;
-}
+  const currentPoint = pointBuffer.current();
+  if (!currentPoint) {
+    return;
+  }
+
+  pointBuffer.add(attractor.step(currentPoint, 0.01));
+};
 
 let isPaused = false;
 window.addEventListener("keydown", (event) => {
   if (event.key === " ") {
     isPaused = !isPaused;
-  } else if (event.key === "."){
-    if (isPaused){
+  } else if (event.key === ".") {
+    if (isPaused) {
       step();
     }
   }
 });
 
-
 context.fillStyle = "#1a1a1a"; // Dark gray background
 const render = () => {
   context.fillRect(0, 0, canvas.width, canvas.height);
-  if (!isPaused){
+  if (!isPaused) {
     step();
   }
 
+  if (pointBuffer.empty()) {
+    return;
+  }
   // draw trailLength points per frame
   context.beginPath();
+  let previousPoint: Point3 | undefined = undefined;
+  for (const currentPoint of pointBuffer) {
+    if (!previousPoint) {
+      previousPoint = currentPoint;
+      continue;
+    }
 
-  for (let i = frame; i < frame + trailLength; i++) {
-    const point = points[i];
-    const previousPoint = points[i - 1];
-    
-    const [canvasX, canvasY] = camera.transform(point);
+    const [canvasX, canvasY] = camera.transform(currentPoint);
     const [prevCanvasX, prevCanvasY] = camera.transform(previousPoint);
 
-    const hue = Math.floor((i / points.length) * 360);
-    context.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+    context.strokeStyle = `hsl(240, 100%, 50%)`;
     context.moveTo(prevCanvasX, prevCanvasY);
     context.lineTo(canvasX, canvasY);
+    previousPoint = currentPoint;
   }
 
   context.stroke();
@@ -84,4 +88,3 @@ const render = () => {
 };
 
 requestAnimationFrame(render);
-
