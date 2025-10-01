@@ -25,6 +25,8 @@ export default [
         clearInterval: "readonly",
         // Node.js globals (for build scripts)
         NodeJS: "readonly",
+        WheelEvent: "readonly",
+        requestAnimationFrame: "readonly",
       },
     },
     plugins: {
