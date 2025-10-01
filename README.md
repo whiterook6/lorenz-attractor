@@ -2,6 +2,8 @@
 
 This project visualizes the Lorenz attractor using TypeScript and HTML Canvas.
 
+![Screenshot](Screenshot.png)
+
 ## Prerequisites
 - Node.js (v16 or higher recommended)
 - yarn
