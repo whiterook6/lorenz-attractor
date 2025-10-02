@@ -1,8 +1,8 @@
-import { LorenzAttractor } from "./lorenzAttractor";
-import { Buffer } from "./buffer";
-import { Camera } from "./camera";
-import { getCanvas, getCanvasContext } from "./canvasContext";
-import { Point3 } from "./types";
+import { LorenzAttractor } from "../lorenzAttractor";
+import { Buffer } from "../buffer";
+import { Camera } from "../camera";
+import { getCanvas, getCanvasContext } from "../canvasContext";
+import { Point3 } from "../types";
 
 // generate points from the attractor
 const pointBuffer = new Buffer<Point3>(1000);

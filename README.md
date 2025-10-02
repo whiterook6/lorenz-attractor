@@ -35,10 +35,6 @@ This project visualizes the Lorenz attractor using TypeScript and HTML Canvas.
 
 ## Run
 1. Open `index.html` in your browser after building. The output JavaScript is generated in the `output/` folder.
-2. For development with live reload, use:
-   ```sh
-   yarn run watch
-   ```
 
 ## Project Structure
 - `src/` — TypeScript source files
