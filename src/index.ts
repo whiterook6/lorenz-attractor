@@ -1,6 +1,6 @@
 import { getCanvas, getCanvasContext } from "./canvasContext";
 import { Buffer } from "./buffer";
-import { buildLyapunovAttractor, LyapunovSimulator } from "./lyapunovAttractor";
+import { buildLyapunovAttractor, buildRandomLyapyunovAttractor, LyapunovSimulator } from "./lyapunovAttractor";
 import { Point2 } from "./types";
 
 // setup canvas and context
@@ -14,9 +14,6 @@ canvas.height = window.innerHeight * dpr;
 canvas.style.width = window.innerWidth + "px";
 canvas.style.height = window.innerHeight + "px";
 
-// const batch = () => {
-//   console.log("Starting new batch");
-//   outerloop: for (let attempt = 0; attempt < 1000; attempt++) {
 const attractor = buildLyapunovAttractor(
   [
     -0.17793205972274895, -0.752757898782072, 0.2096454583786509,
@@ -27,13 +24,14 @@ const attractor = buildLyapunovAttractor(
     -0.058823336874939125, -0.8775969680149762, -0.6448562370328643,
   ]
 );
+// const attractor = buildRandomLyapyunovAttractor();
 const simulator = new LyapunovSimulator(attractor, [
   Math.random() - 0.5,
   Math.random() - 0.5,
 ]);
 
-const buffer = new Buffer<Point2>(100000);
-for (let step = 0; step < 100000; step++) {
+const buffer = new Buffer<Point2>(10_000_000);
+for (let step = 0; step < 10_000_000; step++) {
   const p = simulator.step();
   if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) {
     if (step < 100) {
@@ -48,12 +46,8 @@ console.log(`Lyapunov Exponent: ${simulator.getLyapunovExponent()}`);
 console.log(`Bounds: ${JSON.stringify(simulator.bounds)}`);
 console.log(`Attractor function: ${attractor.toString()}`);
 
-// clear canvas
-context.fillStyle = "#000"; // black background
-context.fillRect(0, 0, canvas.width, canvas.height);
-
-// draw points
-context.fillStyle = "#00ff0099"; // green points
+const pixelDensity = new Float32Array(canvas.width * canvas.height);
+let max = 0;
 for (const point of buffer) {
   const x =
     ((point[0] - simulator.bounds.xmin) /
@@ -63,5 +57,48 @@ for (const point of buffer) {
     ((point[1] - simulator.bounds.ymin) /
       (simulator.bounds.ymax - simulator.bounds.ymin)) *
     canvas.height;
-  context.fillRect(x, y, 1, 1);
+  if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+    pixelDensity[Math.floor(x) + Math.floor(y) * canvas.width]++;
+  }
 }
+
+for (let i = 0; i < pixelDensity.length; i++) {
+  if (pixelDensity[i] > max) {
+    max = pixelDensity[i];
+  }
+}
+const maxDensity = max;
+const imageData = context.createImageData(canvas.width, canvas.height);
+
+function flameColor(t: number): [number, number, number] {
+  // t: 0 = dark, 1 = brightest
+  if (t < 0.5) {
+    // dark orange → yellow
+    const f = t / 0.5;
+    return [
+      255,
+      Math.floor(100 + 155 * f),
+      0
+    ];
+  } else {
+    // yellow → white
+    const f = (t - 0.5) / 0.5;
+    return [
+      255,
+      255,
+      Math.floor(0 + 255 * f)
+    ];
+  }
+}
+
+for (let i = 0; i < pixelDensity.length; i++) {
+  const density = pixelDensity[i];
+  if (density > 0) {
+    const [r, g, b] = flameColor(Math.pow(density / maxDensity, 0.5));
+    imageData.data[i * 4] = r; // R
+    imageData.data[i * 4 + 1] = g; // G
+    imageData.data[i * 4 + 2] = b; // B
+    imageData.data[i * 4 + 3] = 255; // A
+  }
+}
+context.putImageData(imageData, 0, 0);
