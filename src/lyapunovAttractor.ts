@@ -29,7 +29,7 @@ export const buildLyapunovAttractor = (
   xCoefficients: [number, number, number, number, number, number],
   yCoefficients: [number, number, number, number, number, number]
 ) => {
-  return (point: Point2): Point2 => {
+  const fn = (point: Point2): Point2 => {
     const [a0, a1, a2, a3, a4, a5] = xCoefficients;
     const [b0, b1, b2, b3, b4, b5] = yCoefficients;
     const [x, y] = point;
@@ -43,6 +43,13 @@ export const buildLyapunovAttractor = (
       b0 + b1 * x + b2 * x2 + b3 * xy + b4 * y + b5 * y2,
     ];
   };
+  fn.toString = () => {
+    return JSON.stringify({
+      a: xCoefficients,
+      b: yCoefficients,
+    });
+  };
+  return fn;
 };
 
 export class LyapunovSimulator {
@@ -136,6 +143,7 @@ export class LyapunovSimulator {
   getClassification():
     | "chaotic"
     | "stable"
+    | "unknown"
     | "convergent"
     | "divergent"
     | "periodic" {
@@ -156,13 +164,7 @@ export class LyapunovSimulator {
       return "convergent";
     }
 
-    // During warmup or not enough iterations yet
-    if (this.iterations <= 2 * LyapunovSimulator.WARMUP) {
-      return "stable";
-    }
-
     const exponent = this.getLyapunovExponent();
-
     if (exponent < -10) {
       return "periodic";
     } else if (exponent < 10) {
