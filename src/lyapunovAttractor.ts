@@ -1,5 +1,20 @@
 import { Point2 } from "./types";
 
+export const buildAttractorFromString = (str: string) => {
+  // regex to match A-Y, 12 characters
+  const regex = /^[A-Y]{12}$/;
+  if (!regex.test(str)) {
+    throw new Error("Invalid attractor string");
+  }
+  const xCoefficients = Array.from(str.slice(0, 6)).map(
+    (ch) => -1.2 + (ch.charCodeAt(0) - 65) * 0.1
+  ) as [number, number, number, number, number, number];
+  const yCoefficients = Array.from(str.slice(6, 12)).map(
+    (ch) => -1.2 + (ch.charCodeAt(0) - 65) * 0.1
+  ) as [number, number, number, number, number, number];
+  return buildLyapunovAttractor(xCoefficients, yCoefficients);
+}
+
 export const buildRandomLyapyunovAttractor = () => {
   const xCoefficients = new Array<number>(6)
     .fill(0)
