@@ -1,6 +1,6 @@
-# Lorenz Attractor
+# Attractor
 
-This project visualizes the Lorenz attractor using TypeScript and HTML Canvas.
+This project visualizes various Attractors, such as the lorenz attractor, using TypeScript and HTML Canvas.
 
 ![Screenshot](Screenshot.png)
 

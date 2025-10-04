@@ -1,6 +1,6 @@
 import { getCanvas, getCanvasContext } from "./canvasContext";
 import { Buffer } from "./buffer";
-import { buildAttractorFromString, buildLyapunovAttractor, buildRandomLyapyunovAttractor, LyapunovSimulator } from "./lyapunovAttractor";
+import { buildAttractorFromString, LyapunovSimulator } from "./lyapunovAttractor";
 import { Point2 } from "./types";
 
 // setup canvas and context
@@ -26,30 +26,21 @@ canvas.style.height = window.innerHeight + "px";
 // );
 const attractor = buildAttractorFromString("MSSSRRPADDSO");
 // const attractor = buildRandomLyapyunovAttractor();
-const simulator = new LyapunovSimulator(attractor, [
-  Math.random() - 0.5,
-  Math.random() - 0.5,
-]);
+const pointCount = 4_000_000
+const simulator = new LyapunovSimulator(attractor, [0.1, 0.1]);
+const array = new Float32Array(pointCount * 2);
 
-const buffer = new Buffer<Point2>(10_000_000);
-for (let step = 0; step < 10_000_000; step++) {
-  const p = simulator.step();
-  if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) {
-    if (step < 100) {
-      break;
-    }
-  } else {
-    buffer.add(p);
-  }
+console.time("simulation");
+for (let i = 2; i < array.length; i += 2) {
+  const next = simulator.step();
+  array[i] = next[0];
+  array[i + 1] = next[1];
 }
-
-console.log(`Lyapunov Exponent: ${simulator.getLyapunovExponent()}`);
-console.log(`Bounds: ${JSON.stringify(simulator.bounds)}`);
-console.log(`Attractor function: ${attractor.toString()}`);
 
 const pixelDensity = new Float32Array(canvas.width * canvas.height);
 let max = 0;
-for (const point of buffer) {
+for (let i = 0; i < array.length; i += 2) {
+  const point: Point2 = [array[i], array[i + 1]];
   const x =
     ((point[0] - simulator.bounds.xmin) /
       (simulator.bounds.xmax - simulator.bounds.xmin)) *
@@ -62,6 +53,7 @@ for (const point of buffer) {
     pixelDensity[Math.floor(x) + Math.floor(y) * canvas.width]++;
   }
 }
+console.timeEnd("simulation");
 
 for (let i = 0; i < pixelDensity.length; i++) {
   if (pixelDensity[i] > max) {
