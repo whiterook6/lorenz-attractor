@@ -1,4 +1,4 @@
-import { Point3 } from "./types";
+import { Point3 } from "../types";
 
 export class LorenzAttractor {
   sigma: number = 10;

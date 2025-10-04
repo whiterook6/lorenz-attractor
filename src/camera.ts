@@ -13,11 +13,20 @@ export class Camera {
     this.mouseMove = this.mouseMove.bind(this);
     this.mouseUp = this.mouseUp.bind(this);
     this.wheel = this.wheel.bind(this);
+  }
 
+  public enable() {
     window.addEventListener("mousedown", this.mouseDown);
     window.addEventListener("mousemove", this.mouseMove);
     window.addEventListener("mouseup", this.mouseUp);
     window.addEventListener("wheel", this.wheel, { passive: false });
+  }
+
+  public disable() {
+    window.removeEventListener("mousedown", this.mouseDown);
+    window.removeEventListener("mousemove", this.mouseMove);
+    window.removeEventListener("mouseup", this.mouseUp);
+    window.removeEventListener("wheel", this.wheel);
   }
 
   public mouseDown = (event: MouseEvent) => {
