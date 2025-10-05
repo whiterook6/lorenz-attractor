@@ -27,6 +27,7 @@ export default [
         NodeJS: "readonly",
         WheelEvent: "readonly",
         requestAnimationFrame: "readonly",
+        ImageData: "readonly",
       },
     },
     plugins: {

@@ -1,23 +1,9 @@
 /* global Worker */
 
-import { Camera } from "../camera";
+import { Camera } from "../rendering/camera";
+import { FlameRenderer } from "../rendering/flameRenderer";
 import { Point2 } from "../types";
 import { Scene } from "./scene";
-
-/**
- * @param t 0 = dark, 1 = brightest
- */
-function flameColor(t: number): [number, number, number] {
-  if (t < 0.5) {
-    // dark orange → yellow
-    const f = t / 0.5;
-    return [255, Math.floor(100 + 155 * f), 0];
-  } else {
-    // yellow → white
-    const f = (t - 0.5) / 0.5;
-    return [255, 255, Math.floor(0 + 255 * f)];
-  }
-}
 
 export class LyapunovScene extends Scene {
   async _run(
@@ -42,7 +28,7 @@ export class LyapunovScene extends Scene {
         type: "lyapunov",
         payload: {
           attractor: attractorString,
-          points: 40_000_000,
+          points: 100_000,
           skip: 100,
         },
       });
@@ -63,21 +49,26 @@ export class LyapunovScene extends Scene {
       };
     };
 
-    // Calculate scale and offset so bounds fit inside canvas (in CSS pixels)
-    const boundsWidth = bounds.xmax - bounds.xmin;
-    const boundsHeight = bounds.ymax - bounds.ymin;
-    const scale = Math.min(cssWidth / boundsWidth, cssHeight / boundsHeight);
-
-    // setup camera
+    // setup camera with an initial fit to bounds
     const camera = new Camera();
-    camera.enable();
-    camera.scale = Math.max(0, scale);
-    camera.offsetX = cssWidth / 2 - scale * (bounds.xmin + boundsWidth / 2);
-    camera.offsetY = cssHeight / 2 - scale * (bounds.ymin + boundsHeight / 2);
+    camera.fitBounds(
+      {
+        left: bounds.xmin,
+        right: bounds.xmax,
+        top: bounds.ymin,
+        bottom: bounds.ymax,
+      },
+      cssWidth,
+      cssHeight
+    );
 
+    // enable mouse controls for camera
+    camera.enable();
+
+    const pixelDensity = new Float32Array(canvas.width * canvas.height);
     const render = () => {
       imageData.data.fill(1); // clear to white
-      const pixelDensity = new Float32Array(canvas.width * canvas.height);
+      pixelDensity.fill(0); // reset density
       // Map camera output (CSS pixels) to device pixels for density
       for (let i = 0; i < points.length; i += 2) {
         const point: Point2 = [points[i], points[i + 1]];
@@ -95,26 +86,11 @@ export class LyapunovScene extends Scene {
         }
       }
 
-      let maxDensity = 0;
-      for (let i = 0; i < pixelDensity.length; i++) {
-        if (pixelDensity[i] > maxDensity) {
-          maxDensity = pixelDensity[i];
-        }
-      }
-
-      for (let i = 0; i < pixelDensity.length; i++) {
-        const density = pixelDensity[i];
-        if (density > 0) {
-          const [r, g, b] = flameColor(Math.pow(density / maxDensity, 0.5));
-          imageData.data[i * 4] = r; // R
-          imageData.data[i * 4 + 1] = g; // G
-          imageData.data[i * 4 + 2] = b; // B
-          imageData.data[i * 4 + 3] = 255; // A
-        }
-      }
+      FlameRenderer.render(pixelDensity, imageData);
       context.putImageData(imageData, 0, 0);
+      requestAnimationFrame(render);
     };
 
-    render();
+    requestAnimationFrame(render);
   }
 }

@@ -1,4 +1,14 @@
-import { Point3 } from "./types";
+import { Point3 } from "../types";
+
+export type Bounds = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+};
 
 export class Camera {
   isDragging = false;
@@ -7,6 +17,11 @@ export class Camera {
   offsetX = 0;
   offsetY = 0;
   scale = 1;
+  callbacks: Array<() => void> = [];
+
+  public onChange(callback: () => void) {
+    this.callbacks.push(callback);
+  }
 
   constructor() {
     this.mouseDown = this.mouseDown.bind(this);
@@ -29,6 +44,31 @@ export class Camera {
     window.removeEventListener("wheel", this.wheel);
   }
 
+  public fitBounds(
+    bounds: {
+      left: number;
+      right: number;
+      top: number;
+      bottom: number;
+    },
+    canvasCssWidth: number,
+    canvasCssHeight: number
+  ) {
+    // Calculate scale and offset so bounds fit inside canvas (in CSS pixels)
+    const boundsWidth = bounds.right - bounds.left;
+    const boundsHeight = bounds.bottom - bounds.top;
+    const scale = Math.min(
+      canvasCssWidth / boundsWidth,
+      canvasCssHeight / boundsHeight
+    );
+
+    // setup camera
+    this.scale = Math.max(0, scale);
+    this.offsetX = canvasCssWidth / 2 - scale * (bounds.left + boundsWidth / 2);
+    this.offsetY =
+      canvasCssHeight / 2 - scale * (bounds.top + boundsHeight / 2);
+  }
+
   public mouseDown = (event: MouseEvent) => {
     this.isDragging = true;
     this.lastX = event.clientX;
@@ -43,6 +83,7 @@ export class Camera {
       this.offsetY += dy;
       this.lastX = event.clientX;
       this.lastY = event.clientY;
+      this.callbacks.forEach((cb) => cb());
     }
   };
 
@@ -63,6 +104,7 @@ export class Camera {
     this.offsetY = mouseY - factor * (mouseY - this.offsetY);
 
     this.scale *= factor;
+    this.callbacks.forEach((cb) => cb());
   };
 
   public transform = (point: Point3): [number, number] => {
@@ -70,5 +112,21 @@ export class Camera {
     const xScreen = x * this.scale + this.offsetX;
     const yScreen = y * this.scale + this.offsetY;
     return [xScreen, yScreen];
+  };
+
+  public getBounds = (canvasWidth: number, canvasHeight: number): Bounds => {
+    const left = -this.offsetX / this.scale;
+    const right = (canvasWidth - this.offsetX) / this.scale;
+    const top = -this.offsetY / this.scale;
+    const bottom = (canvasHeight - this.offsetY) / this.scale;
+    return {
+      left,
+      right,
+      top,
+      bottom,
+      scale: this.scale,
+      offsetX: this.offsetX,
+      offsetY: this.offsetY,
+    };
   };
 }
