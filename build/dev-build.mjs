@@ -15,20 +15,23 @@ const run = async () => {
         fs.mkdirSync(outputDir);
     }
 
-    // clear output directory
     const files = fs.readdirSync(outputDir);
     await Promise.all(files.map(file => {
         return fs.promises.unlink(path.join(outputDir, file));
     }));
-
-    return esbuild.build({
-        entryPoints: ["src/index.ts"],
-        bundle: true,
-        minify: false,
-        sourcemap: true,
-        outfile: "output/index.js",
-        platform: "node",
-    });
+    const srcHtml = path.join(__dirname, "../src/index.html");
+    const outHtml = path.join(__dirname, "../output/index.html");
+    return Promise.all([
+        fs.promises.copyFile(srcHtml, outHtml),
+        esbuild.build({
+            entryPoints: ['src/index.ts', 'src/worker.ts'],
+            bundle: true,
+            minify: false,
+            sourcemap: true,
+            outdir: 'output', // outputs output/index.js and output/worker.js
+            platform: 'browser', // or 'node' as needed
+        })
+    ]);
 };
 
 run().catch((error) => {console.error(error); process.exit(1)});

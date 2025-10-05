@@ -17,14 +17,17 @@ const run = async () => {
     await Promise.all(files.map(file => {
         return fs.promises.unlink(path.join(outputDir, file));
     }));
-    return esbuild.build({
-        entryPoints: ["src/index.ts"],
-        bundle: true,
-        minify: true,
-        sourcemap: false,
-        outfile: "output/index.js",
-        platform: "node",
-    });
+    const srcHtml = path.join(__dirname, "../src/index.html");
+    const outHtml = path.join(__dirname, "../output/index.html");
+    await Promise.all([
+        fs.promises.copyFile(srcHtml, outHtml),
+        esbuild.build({
+            entryPoints: ['src/index.ts', 'src/worker.ts'],
+            bundle: true,
+            outdir: 'output', // outputs output/index.js and output/worker.js
+            platform: 'browser', // or 'node' as needed
+        })
+    ]);
 };
 
 run().catch((error) => {console.error(error); process.exit(1)});
