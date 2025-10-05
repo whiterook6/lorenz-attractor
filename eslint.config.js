@@ -39,6 +39,7 @@ export default [
       ],
       "no-unused-vars": "off", // Use TypeScript version instead
       "no-console": "off",
+      "no-case-declarations": "warn",
     },
   },
   prettier,

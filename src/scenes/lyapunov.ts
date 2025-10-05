@@ -30,7 +30,7 @@ export class LyapunovScene extends Scene {
     const dpr = window.devicePixelRatio || 1;
     const imageData = context.createImageData(canvas.width, canvas.height);
 
-    // Register service worker and set up messaging
+    // Register web worker and set up messaging
     if (!("Worker" in window)) {
       return;
     }
@@ -40,7 +40,11 @@ export class LyapunovScene extends Scene {
       const worker = new Worker("./worker.js");
       worker.postMessage({
         type: "lyapunov",
-        payload: attractorString,
+        payload: {
+          attractor: attractorString,
+          points: 40_000_000,
+          skip: 100,
+        },
       });
       worker.onmessage = (event) => {
         resolve(event.data);
