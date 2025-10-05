@@ -1,6 +1,9 @@
 import { Point2 } from "../types";
 
-export const buildAttractorFromString = (str: string) => {
+export const buildAttractorFromString = (
+  /** Something like "FIRCDERRPVLD" */
+  str: string
+) => {
   // regex to match A-Y, 12 characters
   const regex = /^[A-Y]{12}$/;
   if (!regex.test(str)) {

@@ -1,7 +1,5 @@
-import {
-  buildAttractorFromString,
-  LyapunovSimulator,
-} from "../attractors/lyapunovAttractor";
+/* global Worker */
+
 import { Camera } from "../camera";
 import { Point2 } from "../types";
 import { Scene } from "./scene";
@@ -22,16 +20,18 @@ function flameColor(t: number): [number, number, number] {
 }
 
 export class LyapunovScene extends Scene {
-  async _run(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): Promise<void> {
+  async _run(
+    canvas: HTMLCanvasElement,
+    context: CanvasRenderingContext2D
+  ): Promise<void> {
     // Use CSS pixel dimensions for camera setup
     const cssWidth = window.innerWidth;
     const cssHeight = window.innerHeight;
     const dpr = window.devicePixelRatio || 1;
     const imageData = context.createImageData(canvas.width, canvas.height);
-    
-    
+
     // Register service worker and set up messaging
-    if (!('Worker' in window)){
+    if (!("Worker" in window)) {
       return;
     }
 
@@ -40,7 +40,7 @@ export class LyapunovScene extends Scene {
       const worker = new Worker("./worker.js");
       worker.postMessage({
         type: "lyapunov",
-        payload: attractorString
+        payload: attractorString,
       });
       worker.onmessage = (event) => {
         resolve(event.data);
@@ -50,7 +50,14 @@ export class LyapunovScene extends Scene {
       };
     });
 
-    const { data: {points, bounds}} = result as { data: {points: Float32Array; bounds: { xmin: number; xmax: number; ymin: number; ymax: number }}};
+    const {
+      data: { points, bounds },
+    } = result as {
+      data: {
+        points: Float32Array;
+        bounds: { xmin: number; xmax: number; ymin: number; ymax: number };
+      };
+    };
 
     // Calculate scale and offset so bounds fit inside canvas (in CSS pixels)
     const boundsWidth = bounds.xmax - bounds.xmin;
