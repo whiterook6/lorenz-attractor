@@ -5,7 +5,8 @@ export type Bounds = {
   right: number;
   top: number;
   bottom: number;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   offsetX: number;
   offsetY: number;
 };
@@ -16,7 +17,8 @@ export class Camera {
   lastY = 0;
   offsetX = 0;
   offsetY = 0;
-  scale = 1;
+  scaleX = 1;
+  scaleY = 1;
   callbacks: Array<() => void> = [];
 
   public onChange(callback: () => void) {
@@ -44,6 +46,9 @@ export class Camera {
     window.removeEventListener("wheel", this.wheel);
   }
 
+  /**
+   * Stretches the bounds to fill the canvas, ignoring aspect ratio, with margin.
+   */
   public fitBounds(
     bounds: {
       left: number;
@@ -58,15 +63,16 @@ export class Camera {
     const margin = 32;
     const boundsWidth = bounds.right - bounds.left;
     const boundsHeight = bounds.bottom - bounds.top;
-    const scale = Math.min(
-      (canvasCssWidth - 2 * margin) / boundsWidth,
-      (canvasCssHeight - 2 * margin) / boundsHeight
-    );
+    // Stretch to fill canvas (ignore aspect ratio)
+    const scaleX = (canvasCssWidth - 2 * margin) / boundsWidth;
+    const scaleY = (canvasCssHeight - 2 * margin) / boundsHeight;
 
-    // setup camera so bounds are centered with margin
-    this.scale = Math.max(0, scale);
-    this.offsetX = margin + (canvasCssWidth - 2 * margin) / 2 - scale * (bounds.left + boundsWidth / 2);
-    this.offsetY = margin + (canvasCssHeight - 2 * margin) / 2 - scale * (bounds.top + boundsHeight / 2);
+    this.scaleX = Math.max(0, scaleX);
+    this.scaleY = Math.max(0, scaleY);
+
+    // Center the bounds in the canvas
+    this.offsetX = margin + (canvasCssWidth - 2 * margin) / 2 - this.scaleX * (bounds.left + boundsWidth / 2);
+    this.offsetY = margin + (canvasCssHeight - 2 * margin) / 2 - this.scaleY * (bounds.top + boundsHeight / 2);
   }
 
   public mouseDown = (event: MouseEvent) => {
@@ -103,28 +109,34 @@ export class Camera {
     this.offsetX = mouseX - factor * (mouseX - this.offsetX);
     this.offsetY = mouseY - factor * (mouseY - this.offsetY);
 
-    this.scale *= factor;
+    this.scaleX *= factor;
+    this.scaleY *= factor;
     this.callbacks.forEach((cb) => cb());
   };
 
+  /**
+   * Transforms a point in world coordinates to screen coordinates,
+   * stretching X and Y independently.
+   */
   public transform = (point: Point3): [number, number] => {
     const [x, y] = point;
-    const xScreen = x * this.scale + this.offsetX;
-    const yScreen = y * this.scale + this.offsetY;
+    const xScreen = x * this.scaleX + this.offsetX;
+    const yScreen = y * this.scaleY + this.offsetY;
     return [xScreen, yScreen];
   };
 
   public getBounds = (canvasWidth: number, canvasHeight: number): Bounds => {
-    const left = -this.offsetX / this.scale;
-    const right = (canvasWidth - this.offsetX) / this.scale;
-    const top = -this.offsetY / this.scale;
-    const bottom = (canvasHeight - this.offsetY) / this.scale;
+    const left = -this.offsetX / this.scaleX;
+    const right = (canvasWidth - this.offsetX) / this.scaleX;
+    const top = -this.offsetY / this.scaleY;
+    const bottom = (canvasHeight - this.offsetY) / this.scaleY;
     return {
       left,
       right,
       top,
       bottom,
-      scale: this.scale,
+      scaleX: this.scaleX,
+      scaleY: this.scaleY,
       offsetX: this.offsetX,
       offsetY: this.offsetY,
     };
