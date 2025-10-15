@@ -54,19 +54,19 @@ export class Camera {
     canvasCssWidth: number,
     canvasCssHeight: number
   ) {
-    // Calculate scale and offset so bounds fit inside canvas (in CSS pixels)
+    // Add a margin of 32px on all sides
+    const margin = 32;
     const boundsWidth = bounds.right - bounds.left;
     const boundsHeight = bounds.bottom - bounds.top;
     const scale = Math.min(
-      canvasCssWidth / boundsWidth,
-      canvasCssHeight / boundsHeight
+      (canvasCssWidth - 2 * margin) / boundsWidth,
+      (canvasCssHeight - 2 * margin) / boundsHeight
     );
 
-    // setup camera
+    // setup camera so bounds are centered with margin
     this.scale = Math.max(0, scale);
-    this.offsetX = canvasCssWidth / 2 - scale * (bounds.left + boundsWidth / 2);
-    this.offsetY =
-      canvasCssHeight / 2 - scale * (bounds.top + boundsHeight / 2);
+    this.offsetX = margin + (canvasCssWidth - 2 * margin) / 2 - scale * (bounds.left + boundsWidth / 2);
+    this.offsetY = margin + (canvasCssHeight - 2 * margin) / 2 - scale * (bounds.top + boundsHeight / 2);
   }
 
   public mouseDown = (event: MouseEvent) => {
