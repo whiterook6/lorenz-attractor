@@ -1,86 +1,101 @@
 /* global Worker */
 
-import { Camera } from "../camera";
+import { Camera } from "../rendering/camera";
+import { FlameRenderer } from "../rendering/flameRenderer";
 import { Point2 } from "../types";
 import { Scene } from "./scene";
-
-/**
- * @param t 0 = dark, 1 = brightest
- */
-function flameColor(t: number): [number, number, number] {
-  if (t < 0.5) {
-    // dark orange → yellow
-    const f = t / 0.5;
-    return [255, Math.floor(100 + 155 * f), 0];
-  } else {
-    // yellow → white
-    const f = (t - 0.5) / 0.5;
-    return [255, 255, Math.floor(0 + 255 * f)];
-  }
-}
 
 export class LyapunovScene extends Scene {
   async _run(
     canvas: HTMLCanvasElement,
     context: CanvasRenderingContext2D
   ): Promise<void> {
+    if (!("Worker" in window)) {
+      return;
+    }
+
     // Use CSS pixel dimensions for camera setup
     const cssWidth = window.innerWidth;
     const cssHeight = window.innerHeight;
     const dpr = window.devicePixelRatio || 1;
     const imageData = context.createImageData(canvas.width, canvas.height);
+    const initialAttractorString = "MSSSRRPADDSO"; // Example attractor string
 
-    // Register web worker and set up messaging
-    if (!("Worker" in window)) {
-      return;
-    }
-
-    const attractorString = "FIRCDERRPVLD"; // Example attractor string
-    const result = await new Promise((resolve, reject) => {
-      const worker = new Worker("./worker.js");
-      worker.postMessage({
-        type: "lyapunov",
-        payload: {
-          attractor: attractorString,
-          points: 40_000_000,
-          skip: 100,
-        },
-      });
-      worker.onmessage = (event) => {
-        resolve(event.data);
-      };
-      worker.onerror = (error) => {
-        reject(error);
-      };
-    });
-
-    const {
-      data: { points, bounds },
-    } = result as {
-      data: {
-        points: Float32Array;
-        bounds: { xmin: number; xmax: number; ymin: number; ymax: number };
-      };
+    const camera = new Camera();
+    const pattern = {
+      points: new Float32Array(),
+      bounds: { xmin: 0, xmax: 0, ymin: 0, ymax: 0 },
     };
 
-    // Calculate scale and offset so bounds fit inside canvas (in CSS pixels)
-    const boundsWidth = bounds.xmax - bounds.xmin;
-    const boundsHeight = bounds.ymax - bounds.ymin;
-    const scale = Math.min(cssWidth / boundsWidth, cssHeight / boundsHeight);
+    const generatePoints = async (attractorString: string) => {
+      const result = await new Promise<{
+        data: { points: Float32Array; bounds: { xmin: number; xmax: number; ymin: number; ymax: number } };
+      }>((resolve, reject) => {
+        const worker = new Worker("./worker.js");
+        worker.postMessage({
+          type: "lyapunov",
+          payload: {
+            attractor: attractorString,
+            points: 10_000_000,
+            skip: 100,
+          },
+        });
+        worker.onmessage = (event) => {
+          resolve(event.data);
+        };
+        worker.onerror = (error) => {
+          reject(error);
+        };
+      });
 
-    // setup camera
-    const camera = new Camera();
+      pattern.points = result.data.points as Float32Array<ArrayBuffer>;
+      pattern.bounds = result.data.bounds as { xmin: number; xmax: number; ymin: number; ymax: number };
+      camera.fitBounds(
+        {
+          left: pattern.bounds.xmin,
+          right: pattern.bounds.xmax,
+          top: pattern.bounds.ymin,
+          bottom: pattern.bounds.ymax,
+        },
+        cssWidth,
+        cssHeight
+      );
+      console.log("Generated attractor with bounds:", pattern.bounds);
+    };
+
+    generatePoints(initialAttractorString);
+    let isGenerating = false;
+    // on key press R, regenerate with a random attractor string
+    window.addEventListener("keydown", async (event) => {
+      if (isGenerating) {
+        return;
+      }
+      if (event.key === "r" || event.key === "R") {
+        isGenerating = true;
+        const allChars = "ABCDEFGHIJKLMNOPQRSTUVWXY";
+        let randomAttractor = "";
+        const length = 12;
+        for (let i = 0; i < length; i++) {
+          const randomIndex = Math.floor(Math.random() * allChars.length);
+          randomAttractor += allChars[randomIndex];
+        }
+        console.log("Generating new attractor:", randomAttractor);
+        await generatePoints(randomAttractor);
+        isGenerating = false;
+      }
+    });
+
+
+    // enable mouse controls for camera
     camera.enable();
-    camera.scale = Math.max(0, scale);
-    camera.offsetX = cssWidth / 2 - scale * (bounds.xmin + boundsWidth / 2);
-    camera.offsetY = cssHeight / 2 - scale * (bounds.ymin + boundsHeight / 2);
 
+    const pixelDensity = new Float32Array(canvas.width * canvas.height);
     const render = () => {
       imageData.data.fill(1); // clear to white
-      const pixelDensity = new Float32Array(canvas.width * canvas.height);
+      pixelDensity.fill(0); // reset density
       // Map camera output (CSS pixels) to device pixels for density
-      for (let i = 0; i < points.length; i += 2) {
-        const point: Point2 = [points[i], points[i + 1]];
+      for (let i = 0; i < pattern.points.length; i += 2) {
+        const point: Point2 = [pattern.points[i], pattern.points[i + 1]];
         const [x, y] = camera.transform([point[0], point[1], 0]); // x, y in CSS pixels
         // Convert CSS pixel coordinates to device pixel coordinates
         const deviceX = Math.floor(x * dpr);
@@ -95,26 +110,11 @@ export class LyapunovScene extends Scene {
         }
       }
 
-      let maxDensity = 0;
-      for (let i = 0; i < pixelDensity.length; i++) {
-        if (pixelDensity[i] > maxDensity) {
-          maxDensity = pixelDensity[i];
-        }
-      }
-
-      for (let i = 0; i < pixelDensity.length; i++) {
-        const density = pixelDensity[i];
-        if (density > 0) {
-          const [r, g, b] = flameColor(Math.pow(density / maxDensity, 0.5));
-          imageData.data[i * 4] = r; // R
-          imageData.data[i * 4 + 1] = g; // G
-          imageData.data[i * 4 + 2] = b; // B
-          imageData.data[i * 4 + 3] = 255; // A
-        }
-      }
+      FlameRenderer.render(pixelDensity, imageData);
       context.putImageData(imageData, 0, 0);
+      requestAnimationFrame(render);
     };
 
-    render();
+    requestAnimationFrame(render);
   }
 }

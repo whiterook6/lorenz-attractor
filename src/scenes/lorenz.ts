@@ -1,6 +1,6 @@
 import { LorenzAttractor } from "../attractors/lorenzAttractor";
 import { Buffer } from "../buffer";
-import { Camera } from "../camera";
+import { Camera } from "../rendering/camera";
 import { Point3 } from "../types";
 import { Scene } from "./scene";
 

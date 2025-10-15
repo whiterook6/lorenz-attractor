@@ -1,4 +1,9 @@
 import { LyapunovScene } from "./scenes/lyapunov";
 
-const scene = new LyapunovScene();
-scene.run();
+const run = async () => {
+  const scene = new LyapunovScene();
+
+  return scene.run();
+};
+
+run();
