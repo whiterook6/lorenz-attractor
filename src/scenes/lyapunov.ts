@@ -64,28 +64,6 @@ export class LyapunovScene extends Scene {
     };
 
     generatePoints(initialAttractorString);
-    let isGenerating = false;
-    // on key press R, regenerate with a random attractor string
-    window.addEventListener("keydown", async (event) => {
-      if (isGenerating) {
-        return;
-      }
-      if (event.key === "r" || event.key === "R") {
-        isGenerating = true;
-        const allChars = "ABCDEFGHIJKLMNOPQRSTUVWXY";
-        let randomAttractor = "";
-        const length = 12;
-        for (let i = 0; i < length; i++) {
-          const randomIndex = Math.floor(Math.random() * allChars.length);
-          randomAttractor += allChars[randomIndex];
-        }
-        console.log("Generating new attractor:", randomAttractor);
-        await generatePoints(randomAttractor);
-        isGenerating = false;
-      }
-    });
-
-
     // enable mouse controls for camera
     camera.enable();
 
